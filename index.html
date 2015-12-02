@@ -78,7 +78,7 @@
 								<li>Common capability, varied behavior by type</li>
 								<li>Instances of the typeclass provide behavior</li>
 						</ul>
-						<pre><code>trait Show[T] extends Serializable {
+						<pre><code>trait Show[T] {
   def show(f: T): String
 }</code></pre>
 				</section>
@@ -96,18 +96,22 @@
 							<li>Can construct through implicit defs</li>
 								<pre><code>implicit def list[A](implicit s: Show[A]): Show[List[A]] = 
   new Show[List[A]] {
-    def show(a: List[A]): String = 
-      a.map(s.show).mkString("(", ",", ")")
+    def show(as: List[A]): String = 
+      as.map(s.show).mkString("(", ",", ")")
   }</code></pre>
 					</ul>
 				</section>
 
 				<section>
-								<p>The compiler can use successive implicit functions to produce the required type</p>
+								<p>When searching for an implicit, the compiler can chain successive implicit functions if it will produce the required type</p>
 						<ul>
-								<li>A breadth-first search</li>
-								<li>Pretty much just <span style="font-style: italic">Prolog</span></li>
+								<li class=fragment>A breadth-first search</li>
+								<li class=fragment>Pretty much just <span style="font-style: italic">Prolog</span></li>
 						</ul>
+				</section>
+
+				<section>
+					<h4>How can we handle more complex types with implicit defs?</h4>
 				</section>
 
 				<!--
@@ -139,6 +143,8 @@
 										<td class="fragment">type operators</td>
 								</tr>
 						</table>
+								<p class=fragment>What does it mean to operate on types?</p>
+								<p class=fragment>What <span style="font-style: italic">is</span> a type?</p>
 				</section>
 
 				<!--
@@ -155,44 +161,39 @@
 
 				<section>
 						<h2>Types as sets</h2>
-						<ul>
-								<li>We can view types as sets of values</li>
-								<li>Bool = Set(false, true)</li>
-								<li>Int = Set(-2,147,483,648, -2,147,483,647, ... -2, -1, 0, 1, 2, 3 ...)</li>
-								<li>Char = Set("a", "b", "c", "d", ... )</li>
-						</ul>
+								<p>We can view types as sets of values</p>
+								<table>
+									<tr><td>Bool</td><td>Set(false, true)</td></tr>
+									<tr><td>Int</td><td>Set(-2,147,483,648, -2,147,483,647, ... -1, 0, 1, 2 ...)</td></tr>
+									<tr><td>Char</td><td>Set('a', 'b', 'c', 'd', ... )</td></tr>
+							</table>
+						<p class="fragment">Now we can just steal set operators!</p>
+
 				</section>
 
 				<section>
-						<ul>
-						<li>A value of a given type is a just a value that is a member of that set</li>
-						<li class="fragment">If types are sets, what are the operators?</li>
-				</ul>
-				</section>
-
-				<section>
-						<h2>Sum Types</h2>
-						<ul>
-								<li>Also called Coproduct</li>
-								<li>A <span style="font-style: italic">disjoint</span> Union</li>
-								<li>Equivalent to a scala Either or Scalaz \/</li>
-								<li>Contain a value from the first set <span>OR</span> the second set</li>
-								<li>Bool \/ Int = Set(false, true, -2,147,483,648, -2,147,483,647, ...)</li>
-						</ul>
-				</section>
-
-				<section>
-						<h2>Product Types</h2>
+						<h2>Product</h2>
 						<ul>
 								<li>Cartesian product of sets</li>
-								<li>Contain one value from the first set <span>AND</span> one from the second</li>
-								<li>Equivalent to a Scala Tuple</li>
+								<li>Contain a value from A <span style="font-style: italic">and</span> one from B</li>
+								<li>Equivalent to a Scala Tuple (A,B)</li>
 								<li>(Bool,Int) = Set((false,0), (true,0), (false,1), (true,1)...)</li>
 						</ul>
 				</section>
 
 				<section>
-						<p>We can express types through these constructs</p>
+						<h2>Coproduct</h2>
+						<ul>
+								<li>Also called a Sum type</li>
+								<li>A <span style="font-style: italic">disjoint</span> Union - left and right types distinguished</li>
+								<li>Equivalent to a scala Either or Scalaz \/</li>
+								<li>Contain a value from A <span style="font-style: italic">or</span> from B</li>
+								<li>Bool \/ Int = Set(false, true, -2,147,483,648, -2,147,483,647, ...)</li>
+						</ul>
+				</section>
+
+				<section>
+						<p>We can express types in terms of operators</p>
 						<ul>
 							<li>Option[A] = () \/ A</li>
 							<li>List[A] = () \/ (A, List[A])</li>
@@ -203,34 +204,38 @@
 				<section>
 						<h2>What does this have to do with Typeclasses?</h2>
 						<ul>
-								<li>We can create any types through applying operators</li>
+								<li>We can model types as operators on simple types</li>
 								<li>If we have
-								<ul><li>typeclass instances for base types</li>
-										<li>implicit functions for type operators</li>
+								<ul>
+									<li>typeclass instances for simple types</li>
+									<li>implicit functions for type operators</li>
 								</ul>
-								<li>We can construct arbitrary typeclass instances</li>
+								<li>We can construct typeclass instances for arbitrary types</li>
 						</ul>
 				</section>
 
 				<section>
-						<h1>Enter the HList</h1>
+						<h1>Enter Shapeless</h1>
 				</section>
 
 				<section>
 						<h2>Heterogenous Lists</h2>
 						<ul>
 								<li>A list of heterogenous types</li>
-								<li>:: Type Operator in Shapeless (HCons)</li>
-								<li>Recursive product - Equivalent to nesting tuples (A, (B, (C, D)))</li>
-								<li>HNil terminating case</li>
-								<pre><code>type MyHList = Int :: String :: Double :: HNil</code></pre>
+								<li>Recursive product - equivalent to nested tuples (A, (B, (C, D)))</li>
+								<pre><code>sealed trait HList
+case class ::[H,T &lt;: HList](head: H, tail: T) extends HList
+case object HNil extends HList</code></pre>
+
+								<pre><code>type Example = Int :: String :: Double :: HNil</code></pre>
+								<pre><code>type Example = ::[Int,::[String,::[Double,HNil]]]</code></pre>
 						</ul>
 				</section>
 
 				<section>
 						<ul>
 								<li>All HList types are either HNil, or the product of a type and an HList</li>
-								<li>All we need to generate arbitrary typeclasses:
+								<li>All we need to generate arbitrary HList typeclasses:
 								<ul>
 									<li>A typeclass instance for HNil</li>
 									<li>An implicit function to create typeclasses for HCons</li>
