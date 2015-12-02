@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>reveal.js - The HTML Presentation Framework</title>
+
+		<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+		<meta name="author" content="Hakim El Hattab">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css" id="theme">
+
+		<!-- Code syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<p>Using type information to generate behaviour</p>
+					<h1>More Typing,
+					<br /><span style="font-style:italic">Less Typing</span></h1>
+				</section>
+
+				<section>
+						<p>Scala has a powerful static type system</p>
+						<p>What is it good for?</p>
+				</section>
+
+				<section>
+					<ul>
+						<li>Validation</li>
+						<li>Generating behaviour?</li>
+					</ul>
+				</section>
+
+				<section>
+						<p>We use types to drive behaviour all the time</p>
+						<li class="fragment">Overloading</li>
+						<li class="fragment">Typeclasses</li>
+				</section>
+
+				<!--
+					Typeclass refresher
+					Behavior per type
+					Found through implicit search
+					Can generate through defs()
+				-->
+
+				<section>
+						<h2>Typeclasses revisited</h2>
+						<ul>
+								<li>An interface across types</li>
+								<li>Common capability, varied behavior by type</li>
+								<li>Instances of the typeclass provide behavior</li>
+						</ul>
+						<pre><code>trait Show[T] extends Serializable {
+  def show(f: T): String
+}</code></pre>
+				</section>
+
+				<section>
+						<h2>Implicit Search</h2>
+					<ul>
+							<li>Scala uses implicit search to provide Typeclasses</li>
+								<pre><code>def f[T](...)(implicit ev: Show[T])</code></pre>
+								<pre><code>def f[T : Show](...)</code></pre>
+							<li>Instances are provided as implicit values</li>
+							<pre><code>implicit val showInt : Show[Int] = new Show[Int] {
+  def show(i: Int): String = i.toString
+}</code></pre>
+							<li>Can construct through implicit defs</li>
+								<pre><code>implicit def list[A](implicit s: Show[A]): Show[List[A]] = 
+  new Show[List[A]] {
+    def show(a: List[A]): String = 
+      a.map(s.show).mkString("(", ",", ")")
+  }</code></pre>
+					</ul>
+				</section>
+
+				<section>
+								<p>The compiler can use successive implicit functions to produce the required type</p>
+						<ul>
+								<li>A breadth-first search</li>
+								<li>Pretty much just <span style="font-style: italic">Prolog</span></li>
+						</ul>
+				</section>
+
+				<!--
+					An Algebra for types
+					Types and Type Operators
+					Product and Sum (Co-product)
+					Chain Products -> HLists
+					Enter Shapeless
+					Generic Macros for Case classes
+				-->
+
+				<section>
+						<h1>An Algebra for Types</h1>
+				</section>
+
+				<section>
+						<h2>What is an Algebra</h2>
+						<table>
+								<tr>
+										<td>Objects</td>
+										<td>Operators</td>
+								</tr>
+								<tr>
+										<td class="fragment">numbers</td>
+										<td class="fragment">+-*/</td>
+								</tr>
+								<tr>
+										<td class="fragment">types</td>
+										<td class="fragment">type operators</td>
+								</tr>
+						</table>
+				</section>
+
+				<!--
+				<section>
+						<h2>Type Operators</h2>
+						<ul>
+								<li>Take one or more types as arguments</li>
+								<li>Return a type</li>
+								<li>Often known as type constructors</li>
+								<li>e.g. List[A], Either[A,B]</li>
+						</ul>
+				</section>
+				-->
+
+				<section>
+						<h2>Types as sets</h2>
+						<ul>
+								<li>We can view types as sets of values</li>
+								<li>Bool = Set(false, true)</li>
+								<li>Int = Set(-2,147,483,648, -2,147,483,647, ... -2, -1, 0, 1, 2, 3 ...)</li>
+								<li>Char = Set("a", "b", "c", "d", ... )</li>
+						</ul>
+				</section>
+
+				<section>
+						<ul>
+						<li>A value of a given type is a just a value that is a member of that set</li>
+						<li class="fragment">If types are sets, what are the operators?</li>
+				</ul>
+				</section>
+
+				<section>
+						<h2>Sum Types</h2>
+						<ul>
+								<li>Also called Coproduct</li>
+								<li>A <span style="font-style: italic">disjoint</span> Union</li>
+								<li>Equivalent to a scala Either or Scalaz \/</li>
+								<li>Contain a value from the first set <span>OR</span> the second set</li>
+								<li>Bool \/ Int = Set(false, true, -2,147,483,648, -2,147,483,647, ...)</li>
+						</ul>
+				</section>
+
+				<section>
+						<h2>Product Types</h2>
+						<ul>
+								<li>Cartesian product of sets</li>
+								<li>Contain one value from the first set <span>AND</span> one from the second</li>
+								<li>Equivalent to a Scala Tuple</li>
+								<li>(Bool,Int) = Set((false,0), (true,0), (false,1), (true,1)...)</li>
+						</ul>
+				</section>
+
+				<section>
+						<p>We can express types through these constructs</p>
+						<ul>
+							<li>Option[A] = () \/ A</li>
+							<li>List[A] = () \/ (A, List[A])</li>
+							<li>(A,B,C,D) = (A, (B, (C, D)))</li>
+						</ul>
+				</section>
+
+				<section>
+						<h2>What does this have to do with Typeclasses?</h2>
+						<ul>
+								<li>We can create any types through applying operators</li>
+								<li>If we have
+								<ul><li>typeclass instances for base types</li>
+										<li>implicit functions for type operators</li>
+								</ul>
+								<li>We can construct arbitrary typeclass instances</li>
+						</ul>
+				</section>
+
+				<section>
+						<h1>Enter the HList</h1>
+				</section>
+
+				<section>
+						<h2>Heterogenous Lists</h2>
+						<ul>
+								<li>A list of heterogenous types</li>
+								<li>:: Type Operator in Shapeless (HCons)</li>
+								<li>Recursive product - Equivalent to nesting tuples (A, (B, (C, D)))</li>
+								<li>HNil terminating case</li>
+								<pre><code>type MyHList = Int :: String :: Double :: HNil</code></pre>
+						</ul>
+				</section>
+
+				<section>
+						<ul>
+								<li>All HList types are either HNil, or the product of a type and an HList</li>
+								<li>All we need to generate arbitrary typeclasses:
+								<ul>
+									<li>A typeclass instance for HNil</li>
+									<li>An implicit function to create typeclasses for HCons</li>
+								</ul>
+								</li>
+						</ul>
+				</section>
+
+				<section>
+					<pre><code>implicit def hnilShow: Show[HNil] = new Show[HNil] {
+  def show(h : HNil):String = ""
+}
+</code></pre>
+
+<pre><code>implicit def hconsShow[H, T <: HList](implicit 
+    showHead: Show[H], 
+    showTail: Show[T]
+  ): Show[H :: T] = new Show[H :: T] {
+  def show(hlist: H :: T) : String = hlist match {
+    case h :: t =>
+      showHead.show(h) + ", " + showTail.show(t) 
+  }
+}
+</code></pre>
+</section>
+
+				<section>
+<pre><code>implicit def hnilEncode[L <: HNil]: EncodeJson[L] = EncodeJson(_=>jEmpty) </code></pre>
+
+<pre><code>implicit def hconsEncode[K <: Symbol, H, T <: HList](implicit
+    key: Witness.Aux[K],
+    headEncode: Lazy[EncodeJson[H]],
+    tailEncode: Lazy[EncodeJson[T]]
+  ): EncodeJson[FieldType[K, H] :: T] =
+    EncodeJson { case h :: t =>
+      (key.value.name -&gt; headEncode.value.encode(h)) -&gt;:
+        tailEncode.value.encode(t)
+    }</code></pre>
+
+<pre><code>implicit def defaultInstanceEncodeJson[F, G](implicit
+    gen: LabelledGeneric.Aux[F, G],
+    encode: Lazy[EncodeJson[G]]
+  ): EncodeJson[F] =
+    encode.value.contramap(gen.to)</code></pre>
+				</section>
+
+				<section>
+						<h2>Thanks</h2>
+						<p>Shapeless by Miles Sabin</p>
+
+						<p>Argonaut-Shapeless by Alexandre Archambault</p>
+		</section>
+
+		<section>
+				<h1>Questions</h1>
+		</section>
+
+				<!--
+					Generating typeclasses for arbitrary case classes
+				-->
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
