@@ -68,7 +68,7 @@
 
 				<!--
 					Typeclass refresher
-					Behavior per type
+					behaviour per type
 					Found through implicit search
 					Can generate through defs()
 				-->
@@ -77,11 +77,11 @@
 						<h2>Typeclasses revisited</h2>
 						<ul>
 								<li>An interface across types</li>
-								<li>Common capability, varied behavior by type</li>
-								<li>Instances of the typeclass provide behavior</li>
+								<li>Common capability, varied behaviour by type</li>
+								<li>Instances of the typeclass provide behaviour</li>
 						</ul>
 						<pre><code>trait Show[T] {
-  def show(f: T): String
+  def show(t: T): String
 }</code></pre>
 				</section>
 
@@ -96,10 +96,10 @@
   def show(i: Int): String = i.toString
 }</code></pre>
 							<li>Can construct through implicit defs</li>
-								<pre><code>implicit def list[A](implicit s: Show[A]): Show[List[A]] = 
-  new Show[List[A]] {
-    def show(as: List[A]): String = 
-      as.map(s.show).mkString("(", ",", ")")
+								<pre><code>implicit def list[T](implicit s: Show[T]): Show[List[T]] = 
+  new Show[List[T]] {
+    def show(ts: List[T]): String = 
+      ts.map(s.show).mkString("(", ",", ")")
   }</code></pre>
 					</ul>
 				</section>
