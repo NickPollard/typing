@@ -224,14 +224,15 @@
 						<h2>Heterogenous Lists</h2>
 						<ul>
 								<li>A list of heterogenous types</li>
-								<li>Recursive product - equivalent to nested tuples (A, (B, (C, D)))</li>
+								<li>Recursive product</li>
+								<li>Equivalent to nested tuples (A, (B, (C, D)))</li>
+						</ul>
 								<pre><code>sealed trait HList
 case class ::[H,T &lt;: HList](head: H, tail: T) extends HList
 case object HNil extends HList</code></pre>
 
 								<pre><code>type Example = Int :: String :: Double :: HNil</code></pre>
 								<pre><code>type Example = ::[Int,::[String,::[Double,HNil]]]</code></pre>
-						</ul>
 				</section>
 
 				<section>
@@ -250,14 +251,15 @@ case object HNil extends HList</code></pre>
 						<h2>Shapeless Coproducts</h2>
 						<ul>
 								<li>Similar to an HList - a list of heterogenous types</li>
-								<li>Recursive coproduct - equivalent to nested Eithers A \/ (B \/ (C \/ D)))</li>
+								<li>Recursive coproduct</li>
+								<li>Equivalent to nested Eithers A \/ (B \/ (C \/ D)))</li>
+						</ul>
 								<pre><code>sealed trait Coproduct
 sealed trait :+:[H,T &lt;: Coproduct] extends Coproduct
 sealed trait CNil extends Coproduct</code></pre>
 
 								<pre><code>type Example = Int :+: String :+: Double :+: HNil</code></pre>
 								<pre><code>type Example = :+:[Int,:+:[String,:+:[Double,HNil]]]</code></pre>
-						</ul>
 				</section>
 	
 
