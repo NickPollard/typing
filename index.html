@@ -4,7 +4,7 @@
 	<head>
 		<meta charset="utf-8">
 
-		<title>reveal.js - The HTML Presentation Framework</title>
+		<title>More Typing, Less Typing</title>
 
 		<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
 		<meta name="author" content="Hakim El Hattab">
@@ -44,6 +44,8 @@
 					<p>Using type information to generate behaviour</p>
 					<h1>More Typing,
 					<br /><span style="font-style:italic">Less Typing</span></h1>
+				<p>Nick Pollard</p>
+				<p><span style="color: #ff0000">Scotiabank</span></p>
 				</section>
 
 				<section>
@@ -250,11 +252,11 @@ case object HNil extends HList</code></pre>
 								<li>Similar to an HList - a list of heterogenous types</li>
 								<li>Recursive coproduct - equivalent to nested Eithers A \/ (B \/ (C \/ D)))</li>
 								<pre><code>sealed trait Coproduct
-case class :+:[H,T &lt;: Coproduct](head: H, tail: T) extends Coproduct
-case object CNil extends Coproduct</code></pre>
+sealed trait :+:[H,T &lt;: Coproduct] extends Coproduct
+sealed trait CNil extends Coproduct</code></pre>
 
-								<pre><code>type Example = Int :: String :: Double :: HNil</code></pre>
-								<pre><code>type Example = ::[Int,::[String,::[Double,HNil]]]</code></pre>
+								<pre><code>type Example = Int :+: String :+: Double :+: HNil</code></pre>
+								<pre><code>type Example = :+:[Int,:+:[String,:+:[Double,HNil]]]</code></pre>
 						</ul>
 				</section>
 	
@@ -315,7 +317,18 @@ case object CNil extends Coproduct</code></pre>
 				</section>
 
 				<section>
-					The point of it all
+					<p>Define our data types</p>
+<pre><code>sealed trait Source
+case class Http(url: String) extends Source
+case class DB(table: String) extends Source
+case class Fallback(first: Source, second: Source) extends Source</pre></code>
+<p>Summon a parser</p>
+<pre><code>val parsable = the[Parsable[Source]]
+val parser = parsable.parser("(", ",", ")")</pre></code>
+<p>Use it!</p>
+<pre><code>val str = "Fallback(Http(\"http://www.example.com\"),DB(\"table\"))" 
+val result = parser.parse(str).get.value
+assert(result === Fallback(Http("http://www.example.com"), DB("table")))</pre></code>
 					</section>
 
 				<section>
@@ -330,10 +343,13 @@ case object CNil extends Coproduct</code></pre>
 						<h2>Check the video on skillshare</h2>
 						<p>This presentation will soon be available on <a href="https://skillsmatter.com/conferences/6862-scala-exchange-2015#skillscasts">https://skillsmatter.com/conferences/6862-scala-exchange-2015#skillscasts</a></p>
 							<p>Slides available at nickpollard.github.io/typing</p>
-		</section>
+							<p>Presentation by Nick Pollard @ <span style="color: #ff0000">Scotiabank</span></p>
+						</section>
 
 		<section>
 				<h1>Questions</h1>
+				<p>nick.pollard@<span style="color: #ff0000">scotiabank</span>.com</p>
+				<p>@nick_enGB</p>
 		</section>
 
 				<!--
