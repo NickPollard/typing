@@ -89,7 +89,7 @@
 							<li>Scala uses implicit search to provide Typeclasses</li>
 								<pre><code>def f[T](...)(implicit ev: Show[T])</code></pre>
 								<pre><code>def f[T : Show](...)</code></pre>
-							<li>Instances are provided as implicit values</li>
+							<li>Instances are defined as implicit values</li>
 							<pre><code>implicit val showInt : Show[Int] = new Show[Int] {
   def show(i: Int): String = i.toString
 }</code></pre>
@@ -243,50 +243,93 @@ case object HNil extends HList</code></pre>
 								</li>
 						</ul>
 				</section>
+			
+				<section>
+						<h2>Shapeless Coproducts</h2>
+						<ul>
+								<li>Similar to an HList - a list of heterogenous types</li>
+								<li>Recursive coproduct - equivalent to nested Eithers A \/ (B \/ (C \/ D)))</li>
+								<pre><code>sealed trait Coproduct
+case class :+:[H,T &lt;: Coproduct](head: H, tail: T) extends Coproduct
+case object CNil extends Coproduct</code></pre>
+
+								<pre><code>type Example = Int :: String :: Double :: HNil</code></pre>
+								<pre><code>type Example = ::[Int,::[String,::[Double,HNil]]]</code></pre>
+						</ul>
+				</section>
+	
 
 				<section>
-					<pre><code>implicit def hnilShow: Show[HNil] = new Show[HNil] {
-  def show(h : HNil):String = ""
-}
-</code></pre>
+					<h2>Implicit parsers</h2>
 
-<pre><code>implicit def hconsShow[H, T <: HList](implicit 
-    showHead: Show[H], 
-    showTail: Show[T]
-  ): Show[H :: T] = new Show[H :: T] {
-  def show(hlist: H :: T) : String = hlist match {
-    case h :: t =>
-      showHead.show(h) + ", " + showTail.show(t) 
-  }
-}
+					<pre><code>trait Parsable[T] {
+  def parser(open: String, sep: String, close: String) : Parser[T]
+} </pre></code>
+					<p class="fragment">We would like to be able to define a simple type hierarchy, and automatically parse that</p>
+</section>
+
+<section>
+	Parsing HLists
+				<pre><code> implicit def hnil: Parsable[HNil] = const[HNil](Pass map (_ =&gt; HNil)) </code></pre>
+<pre><code> implicit def hcons[K &lt;: Symbol, H, T &lt;: HList](implicit 
+						head: Lazy[Parsable[H]],
+                                                tail: Lazy[Parsable[T]]
+				): Parsable[FieldType[K,H] :: T] = 
+    new Parsable[FieldType[K,H] :: T] {
+      def parser(open: String, sep: String, close: String) =
+        head.value.parser(open, sep, close) ~ P(sep) ~
+          tail.value.parser(open, sep, close) map { 
+            case (h,t) =&gt; field[K](h) :: t 
+          }
+    }
 </code></pre>
 </section>
 
 				<section>
-<pre><code>implicit def hnilEncode[L <: HNil]: EncodeJson[L] = EncodeJson(_=>jEmpty) </code></pre>
+					Parsing Coproducts
+<pre><code>implicit def cnil : Parsable[CNil] = const[CNil](Fail)</code></pre>
 
-<pre><code>implicit def hconsEncode[K <: Symbol, H, T <: HList](implicit
-    key: Witness.Aux[K],
-    headEncode: Lazy[EncodeJson[H]],
-    tailEncode: Lazy[EncodeJson[T]]
-  ): EncodeJson[FieldType[K, H] :: T] =
-    EncodeJson { case h :: t =>
-      (key.value.name -&gt; headEncode.value.encode(h)) -&gt;:
-        tailEncode.value.encode(t)
-    }</code></pre>
-
-<pre><code>implicit def defaultInstanceEncodeJson[F, G](implicit
-    gen: LabelledGeneric.Aux[F, G],
-    encode: Lazy[EncodeJson[G]]
-  ): EncodeJson[F] =
-    encode.value.contramap(gen.to)</code></pre>
+<pre><code>implicit def ccons[K &lt;: Symbol, H, T &lt;: Coproduct](implicit 
+                                          key: Witness.Aux[K] ,
+					  head: Lazy[Parsable[H]],
+                                          tail: Lazy[Parsable[T]]
+                                 ): Parsable[FieldType[K,H] :+: T] =
+  new Parsable[FieldType[K,H] :+: T] {
+    def parser(open: String, sep: String, close: String) =
+      P(P(key.value.name) ~ P(open) ~
+        head.value.parser(open, sep, close).map(l =&gt; Inl(field[K](l))) ~
+        P(close)) |
+      P(tail.value.parser(open, sep, close).map(Inr(_)))
+  }</code></pre>
 				</section>
+
+				<section>
+					Projecting case classes
+
+<pre><code>implicit def project[T,U](implicit ev: LabelledGeneric.Aux[T,U], 
+                                   p: Lazy[Parsable[U]]) : Parsable[T] =
+  new Parsable[T] {
+    def parser(open: String, sep: String, close: String) : Parser[T] =
+       p.value.parser(open, sep, close) map ev.from
+  }</pre></code>
+				</section>
+
+				<section>
+					The point of it all
+					</section>
 
 				<section>
 						<h2>Thanks</h2>
 						<p>Shapeless by Miles Sabin</p>
 
-						<p>Argonaut-Shapeless by Alexandre Archambault</p>
+						<p>Fastparse by Li Haoyi</p>
+
+						<p>Scala eXchange by Skills Matter</p>
+					</section>
+					<section>
+						<h2>Check the video on skillshare</h2>
+						<p>This presentation will soon be available on <a href="https://skillsmatter.com/conferences/6862-scala-exchange-2015#skillscasts">https://skillsmatter.com/conferences/6862-scala-exchange-2015#skillscasts</a></p>
+							<p>Slides available at nickpollard.github.io/typing</p>
 		</section>
 
 		<section>
